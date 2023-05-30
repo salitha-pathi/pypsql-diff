@@ -41,7 +41,7 @@ def get_column_data_for_database(database, user, password, host, port):
     return column_data
 
 def get_column_names_and_data_types(cursor, table):
-    cursor.execute(f"SELECT column_name, udt_name, character_maximum_length, numeric_precision, numeric_scale FROM information_schema.columns WHERE table_name = '{table}'")
+    cursor.execute(f"SELECT column_name, udt_name, character_maximum_length, numeric_precision, numeric_scale,is_nullable, column_default FROM information_schema.columns WHERE table_name = '{table}'")
     columns = cursor.fetchall()
 
     column_data = []
@@ -51,13 +51,15 @@ def get_column_names_and_data_types(cursor, table):
         max_length = column[2]
         numeric_precision = column[3]
         numeric_scale = column[4]
+        is_nullable  = column[5]
+        column_default = column[6]
 
         if max_length is not None:
             data_type += f"({max_length})"
         elif numeric_precision is not None and numeric_scale is not None:
             data_type += f"({numeric_precision},{numeric_scale})"
 
-        column_data.append((column_name, data_type))
+        column_data.append((column_name, data_type, column_default, is_nullable))
 
     return column_data
 
@@ -96,8 +98,11 @@ def generate_update_queries(diff):
 
         # Generate SQL queries for added columns
         for column in added_columns:
-            update_query = f"ALTER TABLE {table} ADD COLUMN {column[0]} {column[1]};"
-            update_queries.append(update_query)
+            column_name, data_type, default_value, is_nullable = column
+            default_clause = f" DEFAULT {default_value}" if default_value is not None else ""
+            nullable_clause = " NULL" if is_nullable == 'YES' else "NOT NULL"
+            query = f" ALTER TABLE {table} ADD COLUMN {column_name} {data_type}{default_clause}{nullable_clause};"
+            update_queries.append(query)
 
         # Generate SQL queries for removed columns
         for column in removed_columns:
@@ -106,7 +111,11 @@ def generate_update_queries(diff):
 
         # Generate SQL queries for modified columns
         for old_column, new_column in modified_columns:
-            update_query = f"ALTER TABLE {table} ALTER COLUMN {old_column[0]} TYPE {new_column[1]};"
+            old_column_name, old_data_type, old_default_value = old_column
+            new_column_name, new_data_type, new_default_value, new_is_nullable  = new_column
+            default_clause = f"  DEFAULT {new_default_value}" if new_default_value is not None else ""
+            nullable_clause = " NULL" if new_is_nullable == 'YES' else "NOT NULL"
+            query = f"ALTER TABLE {table} ALTER COLUMN {old_column_name} SET DATA TYPE {new_data_type} USING {old_column_name}::{new_data_type}{default_clause}{nullable_clause};"
             update_queries.append(update_query)
 
     return update_queries
@@ -128,8 +137,8 @@ def generate_report(diff, queries, output_file):
         file.write("## Connection Details\n\n")
         file.write("| Alias | Database | Host | Port | Username |\n")
         file.write("| --- | --- | --- | --- | --- |\n")
-        file.write(f"| {alias_1} | 1 | {host_1} | {port_1} | {username_1} |\n")
-        file.write(f"| {alias_2} | 2 | {host_2} | {port_2} | {username_2} |\n")
+        file.write(f"| {alias_1} | {database_1} | {host_1} | {port_1} | {username_1} |\n")
+        file.write(f"| {alias_2} | {database_2} | {host_2} | {port_2} | {username_2} |\n")
         file.write("\n")
 
         file.write("The following changes have been detected in the databases:\n\n")
@@ -159,7 +168,7 @@ def generate_report(diff, queries, output_file):
 
             if modified_columns:
                 file.write("### Modified Columns (Data Type Changed)\n\n")
-                file.write("| Alias | Old Column Name | New Column Name | New Data Type |\n")
+                file.write("| Alias | Column Name | Old Data Type | New Data Type |\n")
                 file.write("| --- | --- | --- | --- |\n")
                 for old_column, new_column in modified_columns:
                     file.write(f"| {alias_1} | {old_column[0]} | {new_column[0]} | {new_column[1]} |\n")
@@ -186,6 +195,9 @@ write_dictionary_to_json(dict2,  f'{out_dir}/dict2.json')
 
 # Usage
 diff = get_diff_between_dictionaries(dict1, dict2)
+
+write_dictionary_to_json(diff,  f'{out_dir}/diff.json')
+
 
 queries = generate_update_queries(diff)
 
