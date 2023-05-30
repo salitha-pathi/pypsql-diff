@@ -1,20 +1,23 @@
 import psycopg2, json, os
+from dotenv import dotenv_values
 
-alias_1='Database Source'
-host_1='localhost'
-port_1=5432
-username_1='postgres'
-password_1='password'
-database_1='my_app_db'
+env_vars = dotenv_values('.env')
 
-alias_1='Database New'
-host_1='localhost'
-port_1=5431
-username_1='postgres'
-password_1='password'
-database_1='my_app_db_new'
+alias_1=env_vars['ALIAS_1']
+host_1=env_vars['HOST_1']
+port_1=env_vars['PORT_1']
+username_1=env_vars['USERNAME_1']
+password_1=env_vars['PASSWORD_1']
+database_1=env_vars['DATABASE_1']
 
-out_dir='diff'
+alias_2=env_vars['ALIAS_2']
+host_2=env_vars['HOST_2']
+port_2=env_vars['PORT_2']
+username_2=env_vars['USERNAME_2']
+password_2=env_vars['PASSWORD_2']
+database_2=env_vars['DATABASE_2']
+
+out_dir=env_vars['OUT_DIR']
 
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
