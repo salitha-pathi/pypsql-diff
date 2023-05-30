@@ -187,10 +187,10 @@ dict1 = get_column_data_for_database(database_1, username_1, password_1, host_1,
 dict2 = get_column_data_for_database(database_2, username_2, password_2, host_2, port_2)
 
 # Write dict1 to JSON
-write_dictionary_to_json(dict1,  f'{out_dir}/dict1.json')
+write_dictionary_to_json(dict1,  f'{out_dir}/schema-{alias_1}-{database_1}.json')
 
 # Write dict2 to JSON
-write_dictionary_to_json(dict2,  f'{out_dir}/dict2.json')
+write_dictionary_to_json(dict2,  f'{out_dir}/schema-{alias_2}-{database_2}.json')
 
 
 # Usage
@@ -201,7 +201,7 @@ write_dictionary_to_json(diff,  f'{out_dir}/diff.json')
 
 queries = generate_update_queries(diff)
 
-generate_report(diff, queries, f'{out_dir}/diff.md')
+generate_report(diff, queries, f'{out_dir}/diff-{alias_1}-{database_1}-VS-{alias_2}-{database_2}.md')
 
 for table, changes in diff.items():
     print(f"Table: {table}")
