@@ -258,7 +258,34 @@ def generate_report(column_diff, routines_diff, sequences_diff, queries, output_
             file.write(f"{query}\n")
         file.write("````\n\n")
 
-        file.write("## Functions Changes\n")
+        file.write("## Sequences Changes\n")
+        file.write("The following changes have been detected in functions/routines.\n\n")
+
+        if sequences_diff['missing']:
+            file.write("### Missing Sequences\n\n")
+            file.write("| Name | Return Type |\n")
+            file.write("| --- | --- |\n")
+            for seq in sequences_diff['missing']:
+                file.write(f"| {seq[0]} | seq[0] |\n")
+            file.write("\n")
+
+        if sequences_diff['additional']:
+            file.write("### Additional Sequences\n\n")
+            file.write("| Name | Return Type |\n")
+            file.write("| --- | --- |\n")
+            for seq in sequences_diff['additional']:
+                file.write(f"| {seq[0]} | seq[0] |\n")
+            file.write("\n")
+
+        if sequences_diff['modified']:
+            file.write("### Modified Sequences\n\n")
+            file.write("| Name | Return Type |\n")
+            file.write("| --- | --- |\n")
+            for seq in sequences_diff['modified']:
+                file.write(f"| {seq[0]} | seq[0] |\n")
+            file.write("\n")
+
+        file.write("## Functions/Routines Changes\n")
         file.write("The following changes have been detected in functions/routines.\n\n")
 
         if routines_diff['missing']:
@@ -290,7 +317,7 @@ def generate_report(column_diff, routines_diff, sequences_diff, queries, output_
 columns_1, sequences_1, routines_1 = get_column_data_for_database(database_1, username_1, password_1, host_1, port_1)
 columns_2, sequences_2, routines_2 = get_column_data_for_database(database_2, username_2, password_2, host_2, port_2)
 
-seq_diff = {}  # compare_2d_arrays(sequences_1, sequences_2)
+seq_diff = compare_2d_arrays(sequences_1, sequences_2)
 routes_diff = compare_2d_arrays(routines_1, routines_2)
 
 write_dictionary_to_json(columns_1, f'{out_dir}/schema-{alias_1}-{database_1}.json')
